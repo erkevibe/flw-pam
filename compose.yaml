@@ -1,0 +1,109 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Run bootstrap prepare first}
+      POSTGRES_USER: ${POSTGRES_USER:?Run bootstrap prepare first}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run bootstrap prepare first}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - type: bind
+        source: ./lab/.local/initdb.sql
+        target: /docker-entrypoint-initdb.d/001-initdb.sql
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [control]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+
+  recording-init:
+    image: debian:bookworm-slim
+    network_mode: none
+    user: "0:0"
+    command: [sh, -ec, 'chown 1000:1001 /var/lib/guacamole/recordings; chmod 2750 /var/lib/guacamole/recordings']
+    volumes:
+      - recordings:/var/lib/guacamole/recordings
+    restart: "no"
+
+  guacd:
+    image: guacamole/guacd:1.6.0
+    depends_on:
+      recording-init:
+        condition: service_completed_successfully
+      ssh-target:
+        condition: service_healthy
+    volumes:
+      - recordings:/var/lib/guacamole/recordings
+    networks: [control, target]
+    healthcheck:
+      test: [CMD-SHELL, 'nc -z 127.0.0.1 4822 || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  guacamole:
+    image: guacamole/guacamole:1.6.0
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      POSTGRESQL_HOSTNAME: postgres
+      POSTGRESQL_PORT: "5432"
+      POSTGRESQL_DATABASE: ${POSTGRES_DB:?Run bootstrap prepare first}
+      POSTGRESQL_USERNAME: ${POSTGRES_USER:?Run bootstrap prepare first}
+      POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD:?Run bootstrap prepare first}
+      GUACD_HOSTNAME: guacd
+      RECORDING_ENABLED: "true"
+      RECORDING_SEARCH_PATH: /var/lib/guacamole/recordings
+    depends_on:
+      postgres:
+        condition: service_healthy
+      guacd:
+        condition: service_healthy
+    volumes:
+      - recordings:/var/lib/guacamole/recordings:ro
+    networks: [control, frontend]
+    healthcheck:
+      test: [CMD, bash, -ec, 'exec 3<>/dev/tcp/127.0.0.1/8080; printf "GET /guacamole/ HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3; read -r line <&3; [[ "$$line" == *" 200 "* ]]']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+
+  ssh-target:
+    build:
+      # No COPY is needed; keep generated lab secrets out of the build context.
+      context: ./docs
+      dockerfile: ../lab/Dockerfile.ssh
+    environment:
+      SSH_USERNAME: ${SSH_USERNAME:?Run bootstrap prepare first}
+      SSH_PASSWORD: ${SSH_PASSWORD:?Run bootstrap prepare first}
+    volumes:
+      - type: volume
+        source: ssh-host-keys
+        target: /etc/ssh
+        volume:
+          nocopy: true
+    networks: [target]
+    healthcheck:
+      test: [CMD-SHELL, 'ssh-keyscan -T 2 -t ed25519 127.0.0.1 >/dev/null 2>&1']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+networks:
+  control:
+    internal: true
+  target:
+    internal: true
+  frontend:
+    internal: false
+
+volumes:
+  postgres-data:
+  ssh-host-keys:
+  recordings:

@@ -14,3 +14,4 @@ __pycache__/
 .secrets/
 *.key
 *.pem
+lab/.local/
