@@ -1,0 +1,90 @@
+name: ${COMPOSE_PROJECT_NAME:-pam_restart02_rdp_api}
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:?Run bootstrap.py prepare first}
+    environment:
+      POSTGRES_DB: guacamole
+      POSTGRES_USER: guacamole
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Missing private.env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - type: bind
+        source: ./.local/initdb.sql
+        target: /docker-entrypoint-initdb.d/001-initdb.sql
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [control]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U guacamole -d guacamole']
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  recording-init:
+    image: guacamole/guacd:1.6.0
+    user: "0:0"
+    network_mode: none
+    entrypoint: [/bin/sh, -ec]
+    command: ['chown 1000:1000 /var/lib/guacamole/recordings; chmod 2750 /var/lib/guacamole/recordings']
+    volumes:
+      - recordings:/var/lib/guacamole/recordings
+    restart: "no"
+
+  guacd:
+    image: guacamole/guacd:1.6.0
+    environment:
+      XDG_CONFIG_HOME: /home/guacd/.config
+    depends_on:
+      recording-init:
+        condition: service_completed_successfully
+    volumes:
+      - recordings:/var/lib/guacamole/recordings
+      - type: bind
+        source: ./.local/windows-trust
+        target: /home/guacd/.config/freerdp
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [control, target-egress]
+    healthcheck:
+      test: [CMD-SHELL, 'nc -z 127.0.0.1 4822']
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  guacamole:
+    image: guacamole/guacamole:1.6.0
+    ports:
+      - "127.0.0.1:18080:8080"
+    environment:
+      POSTGRESQL_ENABLED: "true"
+      POSTGRESQL_HOSTNAME: postgres
+      POSTGRESQL_PORT: "5432"
+      POSTGRESQL_DATABASE: guacamole
+      POSTGRESQL_USERNAME: guacamole
+      POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD:?Missing private.env}
+      GUACD_HOSTNAME: guacd
+      RECORDING_ENABLED: "true"
+      RECORDING_SEARCH_PATH: /var/lib/guacamole/recordings
+    group_add: ["1000"]
+    volumes:
+      - recordings:/var/lib/guacamole/recordings:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      guacd:
+        condition: service_healthy
+    networks: [control, frontend]
+
+networks:
+  control:
+    internal: true
+  frontend: {}
+  target-egress:
+    driver: bridge
+
+volumes:
+  postgres-data: {}
+  recordings: {}
