@@ -1,7 +1,8 @@
-name: Workflow lab tests
+name: PAM laboratory tests
 on:
   push:
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -17,3 +18,26 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: python -B -m unittest discover -v
       - run: python -B workflow.py --help
+      - run: python -B tests/integration_gateway.py --static
+  gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare generated local credentials and database schema
+        run: python -B lab/bootstrap.py prepare
+      - name: Start isolated gateway and test SSH target
+        run: docker compose --env-file lab/.local/.env up -d --build
+      - name: Rotate default login and provision test accounts
+        run: python -B lab/bootstrap.py provision
+      - name: Verify real SSH tunnel, access denial and session recording
+        run: python -B tests/integration_gateway.py --live
+      - name: Stop disposable CI laboratory
+        if: always()
+        run: |
+          if [ -f lab/.local/.env ]; then
+            docker compose --env-file lab/.local/.env down --volumes
+          fi
