@@ -1,0 +1,395 @@
+{
+  "format_version": 1,
+  "tool": "FLW flw.py + real CodexWorker",
+  "runtime": {
+    "cli_version": "0.153.4",
+    "authentication": "existing ChatGPT login",
+    "paid_api_used": false,
+    "model": "gpt-6-astra",
+    "reasoning_effort": "medium"
+  },
+  "status": "demo_ready",
+  "production_ready": false,
+  "runs": [
+    {
+      "run_id": "3e587862131445509b3fb0402fa10484",
+      "status": "blocked",
+      "profile": {
+        "council_age": 60,
+        "max_parallel": 1,
+        "policy": "deterministic rules, not an LLM council"
+      },
+      "worker_timeout_seconds": 240,
+      "duration_seconds": 480.126,
+      "revision": "03070d864fe0d8b963409206309a1d8a3775acb71af3d6421baf09c98aa913a3",
+      "evidence_valid": false,
+      "tasks": {
+        "developer": {
+          "state": "failed",
+          "attempts": 1,
+          "input_revision": "03070d864fe0d8b963409206309a1d8a3775acb71af3d6421baf09c98aa913a3",
+          "output_revision": null,
+          "duration_seconds": 240.015,
+          "failure": "worker_timeout"
+        },
+        "qa": {
+          "state": "failed",
+          "attempts": 1,
+          "input_revision": "03070d864fe0d8b963409206309a1d8a3775acb71af3d6421baf09c98aa913a3",
+          "output_revision": null,
+          "duration_seconds": 240.108,
+          "failure": "worker_timeout"
+        },
+        "security_review": {
+          "state": "blocked",
+          "attempts": 0,
+          "failure": "dependency_failed_or_blocked"
+        }
+      },
+      "checks": [],
+      "acceptance": [
+        {
+          "id": "workflow_contract",
+          "description": "Real unittest checks validate persisted lifecycle and lab security gates from fixed contract",
+          "check_ids": [
+            "unit_tests"
+          ],
+          "status": "unknown"
+        },
+        {
+          "id": "cli_usable",
+          "description": "CLI help is runnable",
+          "check_ids": [
+            "cli_help"
+          ],
+          "status": "unknown"
+        }
+      ],
+      "plan": {
+        "goal": "Build the first working FLW PAM Workflow Lab slice from immutable CONTRACT.md using real Codex workers.",
+        "council_age": 60,
+        "max_parallel": 2,
+        "max_attempts": 1,
+        "checkpoint_seconds": 60,
+        "deadline_seconds": 900,
+        "tasks": [
+          {
+            "id": "developer",
+            "role": "Python workflow engineer",
+            "goal": "Read CONTRACT.md completely. Implement only workflow.py with the exact public API and CLI, SQLite parameterization, strict validation, transactional mutation+audit, immutable terminal transitions and concurrency-safe approval. Use stdlib only. Do not edit tests or CONTRACT.md. Keep output compact and implement all required gates. Verify locally without leaving artifacts in workspace.",
+            "depends_on": [],
+            "outputs": [
+              "workflow.py"
+            ],
+            "checks": [
+              {
+                "id": "module_import",
+                "argv": [
+                  "python3",
+                  "-B",
+                  "-c",
+                  "import workflow; assert callable(workflow.Workflow)"
+                ],
+                "timeout_seconds": 30
+              }
+            ],
+            "acceptance": []
+          },
+          {
+            "id": "qa",
+            "role": "Independent contract-driven QA engineer",
+            "goal": "Read fixed CONTRACT.md as your source of expected behavior. Write only test_workflow.py with real stdlib unittest tests for specified behavior and important security edge cases. Use temp directories and injected clock; test concurrency and transactional audit rollback (SQLite trigger can inspect schema). Do not modify implementation, weaken checks to fit bugs, or change contract. The final evaluator runs your tests; report implementation defects honestly.",
+            "depends_on": [],
+            "outputs": [
+              "test_workflow.py"
+            ],
+            "checks": [
+              {
+                "id": "tests_import",
+                "argv": [
+                  "python3",
+                  "-B",
+                  "-c",
+                  "import test_workflow"
+                ],
+                "timeout_seconds": 30
+              }
+            ],
+            "acceptance": []
+          },
+          {
+            "id": "security_review",
+            "role": "Security reviewer with terminal veto",
+            "goal": "Review workflow.py and test_workflow.py against CONTRACT.md. Run actual tests. Inspect distinct approval, fail-closed resource+actor+expiry, immutable states, SQL transaction+audit atomicity and race safety. Write only security-review.json. Request changes for blocking defects with precise findings; approve only if working and clearly lab-only. Do not modify code/tests.",
+            "depends_on": [
+              "developer",
+              "qa"
+            ],
+            "outputs": [
+              "security-review.json"
+            ],
+            "checks": [],
+            "acceptance": [],
+            "review_file": "security-review.json"
+          }
+        ],
+        "checks": [
+          {
+            "id": "unit_tests",
+            "argv": [
+              "python3",
+              "-B",
+              "-m",
+              "unittest",
+              "-v"
+            ],
+            "timeout_seconds": 60
+          },
+          {
+            "id": "cli_help",
+            "argv": [
+              "python3",
+              "-B",
+              "workflow.py",
+              "--help"
+            ],
+            "timeout_seconds": 15
+          }
+        ],
+        "acceptance": [
+          {
+            "id": "workflow_contract",
+            "description": "Real unittest checks validate persisted lifecycle and lab security gates from fixed contract",
+            "check_ids": [
+              "unit_tests"
+            ]
+          },
+          {
+            "id": "cli_usable",
+            "description": "CLI help is runnable",
+            "check_ids": [
+              "cli_help"
+            ]
+          }
+        ],
+        "max_repair_rounds": 1,
+        "repair_task": "developer"
+      },
+      "repair_rounds_used": 0
+    },
+    {
+      "run_id": "4f13c6de22d84c1b963859b92ab7b785",
+      "status": "demo_ready",
+      "profile": {
+        "council_age": 40,
+        "max_parallel": 2,
+        "policy": "deterministic rules, not an LLM council"
+      },
+      "worker_timeout_seconds": 420,
+      "duration_seconds": 464.357,
+      "revision": "20a40ecd64fa2240c277874d90981ab5e5cd7d4e3511aa1c6bd46e39d41db5a7",
+      "evidence_valid": true,
+      "tasks": {
+        "developer": {
+          "state": "accepted",
+          "attempts": 1,
+          "input_revision": "b73ba52830b962e94825d7c84b22e829101de3d860851d66ed95e5ba02079257",
+          "output_revision": "b73ba52830b962e94825d7c84b22e829101de3d860851d66ed95e5ba02079257",
+          "duration_seconds": 346.048
+        },
+        "qa": {
+          "state": "accepted",
+          "attempts": 1,
+          "input_revision": "b73ba52830b962e94825d7c84b22e829101de3d860851d66ed95e5ba02079257",
+          "output_revision": "5cd64aed88af10c318fb2891b719a87bf3ba9add68d8fad9a3d16b66def155ca",
+          "duration_seconds": 360.603
+        },
+        "security_review": {
+          "state": "accepted",
+          "attempts": 1,
+          "input_revision": "5cd64aed88af10c318fb2891b719a87bf3ba9add68d8fad9a3d16b66def155ca",
+          "output_revision": "20a40ecd64fa2240c277874d90981ab5e5cd7d4e3511aa1c6bd46e39d41db5a7",
+          "duration_seconds": 101.812
+        }
+      },
+      "checks": [
+        {
+          "id": "unit_tests",
+          "argv": [
+            "python3",
+            "-B",
+            "-m",
+            "unittest",
+            "-v"
+          ],
+          "passed": true,
+          "returncode": 0,
+          "duration_seconds": 1.8675056920037605
+        },
+        {
+          "id": "cli_help",
+          "argv": [
+            "python3",
+            "-B",
+            "workflow.py",
+            "--help"
+          ],
+          "passed": true,
+          "returncode": 0,
+          "duration_seconds": 0.0642888949951157
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "workflow_contract",
+          "description": "Real unittest checks validate persisted lifecycle and lab security gates from fixed contract",
+          "check_ids": [
+            "unit_tests"
+          ],
+          "status": "pass"
+        },
+        {
+          "id": "cli_usable",
+          "description": "CLI help is runnable",
+          "check_ids": [
+            "cli_help"
+          ],
+          "status": "pass"
+        }
+      ],
+      "plan": {
+        "goal": "Build the first working FLW PAM Workflow Lab slice from immutable CONTRACT.md using real Codex workers.",
+        "council_age": 40,
+        "max_parallel": 2,
+        "max_attempts": 1,
+        "checkpoint_seconds": 60,
+        "deadline_seconds": 1200,
+        "tasks": [
+          {
+            "id": "developer",
+            "role": "Python workflow engineer",
+            "goal": "Read CONTRACT.md completely. Existing workflow.py is an UNACCEPTED draft from a real Codex worker that exceeded its 240-second time budget. Review and fix this draft to the exact contract; keep only workflow.py changes. Validate core behavior using temporary directories and do not regenerate working code unnecessarily. Another independent worker owns tests. Complete a concise final summary within your time budget; do not claim acceptance yourself.",
+            "depends_on": [],
+            "outputs": [
+              "workflow.py"
+            ],
+            "checks": [
+              {
+                "id": "module_import",
+                "argv": [
+                  "python3",
+                  "-B",
+                  "-c",
+                  "import workflow; assert callable(workflow.Workflow)"
+                ],
+                "timeout_seconds": 30
+              }
+            ],
+            "acceptance": []
+          },
+          {
+            "id": "qa",
+            "role": "Independent contract-driven QA engineer",
+            "goal": "Read fixed CONTRACT.md as your source of expected behavior. Write only test_workflow.py with real stdlib unittest tests for specified behavior and important security edge cases. Use temp directories and injected clock; test concurrency and transactional audit rollback (SQLite trigger can inspect schema). Do not modify implementation, weaken checks to fit bugs, or change contract. The final evaluator runs your tests; report implementation defects honestly.",
+            "depends_on": [],
+            "outputs": [
+              "test_workflow.py"
+            ],
+            "checks": [
+              {
+                "id": "tests_import",
+                "argv": [
+                  "python3",
+                  "-B",
+                  "-c",
+                  "import test_workflow"
+                ],
+                "timeout_seconds": 30
+              }
+            ],
+            "acceptance": []
+          },
+          {
+            "id": "security_review",
+            "role": "Security reviewer with terminal veto",
+            "goal": "Review workflow.py and test_workflow.py against CONTRACT.md. Run actual tests. Inspect distinct approval, fail-closed resource+actor+expiry, immutable states, SQL transaction+audit atomicity and race safety. Write only security-review.json. Request changes for blocking defects with precise findings; approve only if working and clearly lab-only. Do not modify code/tests.",
+            "depends_on": [
+              "developer",
+              "qa"
+            ],
+            "outputs": [
+              "security-review.json"
+            ],
+            "checks": [],
+            "acceptance": [],
+            "review_file": "security-review.json"
+          }
+        ],
+        "checks": [
+          {
+            "id": "unit_tests",
+            "argv": [
+              "python3",
+              "-B",
+              "-m",
+              "unittest",
+              "-v"
+            ],
+            "timeout_seconds": 60
+          },
+          {
+            "id": "cli_help",
+            "argv": [
+              "python3",
+              "-B",
+              "workflow.py",
+              "--help"
+            ],
+            "timeout_seconds": 15
+          }
+        ],
+        "acceptance": [
+          {
+            "id": "workflow_contract",
+            "description": "Real unittest checks validate persisted lifecycle and lab security gates from fixed contract",
+            "check_ids": [
+              "unit_tests"
+            ]
+          },
+          {
+            "id": "cli_usable",
+            "description": "CLI help is runnable",
+            "check_ids": [
+              "cli_help"
+            ]
+          }
+        ],
+        "max_repair_rounds": 1,
+        "repair_task": "developer"
+      },
+      "repair_rounds_used": 0
+    }
+  ],
+  "council_change": {
+    "from_age": 60,
+    "to_age": 40,
+    "reason": "Initial workers exceeded240-second budgets. Parallel developer/independent QA is appropriate for a local lab without real grants. Gates unchanged; reviewer waits for both."
+  },
+  "draft_provenance": "Corrective seed reused only the first timed-out developer draft and immutable contract. A new real Codex developer reviewed and verified it, independent QA supplied tests, reviewer approved current integrated artifacts. No silent promotion of a failed output.",
+  "redaction": "No raw worker logs, credentials, environment dumps, session IDs or local absolute paths are included.",
+  "supplementary_qa": {
+    "tests": 8,
+    "combined_tests": 29,
+    "result": "passed",
+    "run_by": "independent parent-task QA on temporary copy of identical candidate plus test_security.py",
+    "part_of_flw_candidate_revision": false
+  },
+  "github_ci": "configuration_created; remote execution not claimed",
+  "delivered_sha256": {
+    "workflow.py": "3e2d0acdfd3caca675e8c35dab215b865984b7e47ab53064831fd4eac066c314",
+    "test_workflow.py": "f4f13e0c44f3bee732f11206feea5d26a737ebdb14c84ea1f93c12bdc06dc55c",
+    "CONTRACT.md": "a96c0d4e350657b15228c93bd3322f190884952e37599b320c08639adf73f725",
+    "docs/security-review.json": "0c3d6cd13bcc2b2af35951dfd8b9ef688c0ef0609d1bb8b2da920d0c0623006b",
+    "test_security.py": "87d488516fa820480de5db8b6d61263794e09c58f67da0ba2b00805cbd3f8b7f"
+  }
+}
