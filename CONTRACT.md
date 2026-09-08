@@ -1,10 +1,10 @@
-# FLW PAM Workflow Lab — fixed implementation contract
+# PAM access-request prototype — API contract
 
 Build a working **local workflow laboratory**, not a production PAM, authentication server, credential broker, or real access-grant integration. Python 3.11+ standard library only. CLI actors are explicit strings trusted at the current OS-user boundary; they are not authenticated identities. Do not implement HTTP/login/passwords. No secrets, real grants, external services, or network calls. SQLite audit is ordinary transactional storage, NOT WORM or tamper-proof against a database/OS owner.
 
 ## Files and API
 
-Developer owns only `workflow.py`. QA owns only `test_workflow.py`. Reviewer owns only `security-review.json`. This file is immutable. Tests must use tempfile directories and deterministic clock where needed; no databases or output logs in the source tree. Importing workflow must have no side effects.
+The prototype is implemented in `workflow.py`. Tests use temporary databases and a deterministic clock where needed. Importing workflow has no side effects.
 
 Export `class Workflow` from workflow.py:
 
@@ -39,5 +39,3 @@ Each successful command prints one JSON document. Errors print JSON error and ex
 ## Verification
 
 `python3 -B -m unittest -v` must run real unit tests and pass. Cover full happy lifecycle, different approver, invalid/overlarge/bool TTL, resource allowlist and durable reopen policy, expiry boundary, deny/revoke terminal states, actor/resource check mismatch, unknown request, persisted records/audit across instances, no mutation on invalid commands, SQL parameter safety, concurrent approval single winner, audit insertion failure rollback, and CLI allowed/denied/error exit codes. Runtime no dependencies beyond standard library.
-
-Security reviewer must inspect current code AND tests and write the declared JSON review. Any real blocking workflow defect -> request_changes with specific findings, never approval to satisfy a score. An honest lab limitation already stated here is not a blocker by itself. Do not claim production readiness, authentication, WORM audit, or integration with actual grants.
